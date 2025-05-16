@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package systray
@@ -703,6 +704,8 @@ func (t *winTray) getVisibleItemIndex(parent, val uint32) int {
 // Loads an image from file to be shown in tray or menu item.
 // LoadImage: https://msdn.microsoft.com/en-us/library/windows/desktop/ms648045(v=vs.85).aspx
 func (t *winTray) loadIconFrom(src string) (windows.Handle, error) {
+	const SM_CXSMICON = 49
+	const SM_CYSMICON = 50
 	const IMAGE_ICON = 1               // Loads an icon
 	const LR_LOADFROMFILE = 0x00000010 // Loads the stand-alone image from the file
 	const LR_DEFAULTSIZE = 0x00000040  // Loads default-size icon for windows(SM_CXICON x SM_CYICON) if cx, cy are set to zero
@@ -716,12 +719,16 @@ func (t *winTray) loadIconFrom(src string) (windows.Handle, error) {
 		if err != nil {
 			return 0, err
 		}
+
+		width, _, _ := pGetSystemMetrics.Call(uintptr(SM_CXSMICON))
+		height, _, _ := pGetSystemMetrics.Call(uintptr(SM_CYSMICON))
+
 		res, _, err := pLoadImage.Call(
 			0,
 			uintptr(unsafe.Pointer(srcPtr)),
 			IMAGE_ICON,
-			0,
-			0,
+			width,
+			height,
 			LR_LOADFROMFILE|LR_DEFAULTSIZE,
 		)
 		if res == 0 {
